@@ -3056,6 +3056,10 @@ LRESULT DisplayServerWindows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 		} break;
 		case WM_DEVICECHANGE: {
 			joypad->probe_joypads();
+			CameraServer *camera_server = CameraServer::get_singleton();
+			if (camera_server) {
+				camera_server->update_feeds();
+			}
 		} break;
 		case WM_DESTROY: {
 			Input::get_singleton()->flush_buffered_events();
