@@ -1272,7 +1272,8 @@ void DisplayServerWindows::window_set_flag(WindowFlags p_flag, bool p_enabled, W
 			_update_window_style(p_window);
 		} break;
 		case WINDOW_FLAG_TRANSPARENT: {
-			// FIXME: Implement.
+			wd.transparent = p_enabled;
+			_update_window_transparent(p_window);
 		} break;
 		case WINDOW_FLAG_NO_FOCUS: {
 			wd.no_focus = p_enabled;
@@ -1304,7 +1305,7 @@ bool DisplayServerWindows::window_get_flag(WindowFlags p_flag, WindowID p_window
 			return wd.always_on_top;
 		} break;
 		case WINDOW_FLAG_TRANSPARENT: {
-			// FIXME: Implement.
+			return wd.transparent;
 		} break;
 		case WINDOW_FLAG_NO_FOCUS: {
 			return wd.no_focus;
@@ -1317,6 +1318,20 @@ bool DisplayServerWindows::window_get_flag(WindowFlags p_flag, WindowID p_window
 	}
 
 	return false;
+}
+
+void DisplayServerWindows::_update_window_transparent(WindowID p_window) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND(!windows.has(p_window));
+	WindowData &wd = windows[p_window];
+
+	DWM_BLURBEHIND bb = { 0 };
+	HRGN hRgn = CreateRectRgn(0, 0, -1, -1);
+	bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
+	bb.hRgnBlur = hRgn;
+	bb.fEnable = wd.transparent ? TRUE : FALSE;
+	DwmEnableBlurBehindWindow(wd.hWnd, &bb);
 }
 
 void DisplayServerWindows::window_request_attention(WindowID p_window) {

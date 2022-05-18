@@ -61,6 +61,7 @@
 #include "gl_manager_windows.h"
 #endif
 
+#include <dwmapi.h>
 #include <fcntl.h>
 #include <io.h>
 #include <stdio.h>
@@ -343,6 +344,7 @@ class DisplayServerWindows : public DisplayServer {
 		bool no_focus = false;
 		bool window_has_focus = false;
 		bool exclusive = false;
+		bool transparent = false;
 
 		// Used to transfer data between events using timer.
 		WPARAM saved_wparam;
@@ -437,6 +439,7 @@ class DisplayServerWindows : public DisplayServer {
 
 	void _update_window_style(WindowID p_window, bool p_repaint = true);
 	void _update_window_mouse_passthrough(WindowID p_window);
+	void _update_window_transparent(WindowID p_window);
 
 	void _update_real_mouse_position(WindowID p_window);
 
