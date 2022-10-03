@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="AudioEffectNoiseSuppression" inherits="AudioEffect" version="4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Adds noise suppression to an audio bus.
+	</brief_description>
+	<description>
+		Uses the RNNoise library to remove background noise, leaving only human speech in the audio stream.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_voice_activation_probability" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the current probability that a human voice is audible, between 0 (only silence or background noise) and 1 (audible human speech).
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="stereo" type="bool" setter="set_stereo" getter="is_stereo" default="false">
+			Toggle whether RNNoise should work on each audio channel independently or not.
+			As the most common application for this effect is for voice-chat, which rarely requires stereo audio, it can be more performant to disable this setting.
+		</member>
+	</members>
+</class>
