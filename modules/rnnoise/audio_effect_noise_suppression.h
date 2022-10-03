@@ -31,6 +31,7 @@
 #ifndef AUDIO_EFFECT_NOISE_SUPPRESSION_H
 #define AUDIO_EFFECT_NOISE_SUPPRESSION_H
 
+#include "core/templates/local_vector.h"
 #include "thirdparty/rnnoise/rnnoise.h"
 #include "servers/audio/audio_effect.h"
 
@@ -42,6 +43,8 @@ class AudioEffectNoiseSuppressionInstance : public AudioEffectInstance {
 	Ref<AudioEffectNoiseSuppression> base;
 
 	DenoiseState *rnnoise;
+	LocalVector<float> denoise_buffer;
+	LocalVector<float> output_buffer;
 
 public:
 	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;

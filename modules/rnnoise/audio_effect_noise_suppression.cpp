@@ -31,7 +31,7 @@
 #include "audio_effect_noise_suppression.h"
 
 // Current version of rnnoise does not support any other frame size.
-const int FRAME_SIZE = 480;
+const int DENOISE_FRAME_SIZE = 480;
 
 AudioEffectNoiseSuppressionInstance::AudioEffectNoiseSuppressionInstance() {
 	rnnoise = rnnoise_create(nullptr);
@@ -46,26 +46,41 @@ void AudioEffectNoiseSuppressionInstance::process(const AudioFrame *p_src_frames
 	// At the time of writing this code, RNNoise only supports a sample rate of 48000 Hz.
 	// TODO: Check "mix rate" project setting and warn accordingly.
 
-	if (p_frame_count != FRAME_SIZE) {
-		WARN_PRINT_ONCE(vformat("Can't use RNNoise, because AudioServer's buffer size (%d) is not set to the required FRAME_SIZE of %d", p_frame_count, FRAME_SIZE));
+	if (p_frame_count < DENOISE_FRAME_SIZE) {
+		WARN_PRINT_ONCE(vformat("Can't use RNNoise, because AudioServer's buffer size (%d) is less than DENOISE_FRAME_SIZE (%d)", p_frame_count, DENOISE_FRAME_SIZE));
 		return;
 	}
 
-	PackedFloat32Array denoise_frames;
-	denoise_frames.resize(FRAME_SIZE);
-	float *denoise_frame_ptr = denoise_frames.ptrw();
-	for (int i = 0; i < FRAME_SIZE; i++) {
-		// TODO: needs two denoisestates to support stereo correctly
-		short left = p_src_frames[i].l * static_cast<float>(std::numeric_limits<short>::max());
-		denoise_frame_ptr[i] = left;
+	uint32_t denoise_size = denoise_buffer.size();
+	denoise_buffer.resize(denoise_size + p_frame_count);
+
+	for (int i = 0; i < p_frame_count; i++) {
+		denoise_buffer[i + denoise_size] = p_src_frames[i].l * static_cast<float>(std::numeric_limits<short>::max());
 	}
-
-	base->vad_probability = rnnoise_process_frame(rnnoise, denoise_frame_ptr, denoise_frame_ptr);
-
-	for (int i = 0; i < FRAME_SIZE; i++) {
-		float res = denoise_frame_ptr[i] / static_cast<float>(std::numeric_limits<short>::max());
-		p_dst_frames[i].l = res;
-		p_dst_frames[i].r = res;
+	while (denoise_buffer.size() >= DENOISE_FRAME_SIZE) {
+		uint32_t output_size = output_buffer.size();
+		output_buffer.resize(output_size + DENOISE_FRAME_SIZE);
+		base->vad_probability = rnnoise_process_frame(rnnoise, output_buffer.ptr() + output_size, denoise_buffer.ptr());
+		for (int i = 0; i < DENOISE_FRAME_SIZE; i++) {
+			denoise_buffer.remove_at(0);
+		}
+	}
+	if (output_buffer.size() >= DENOISE_FRAME_SIZE + p_frame_count) {
+		// Sufficient data + buffer, can emit.
+		for (int i = 0; i < p_frame_count; i++) {
+			float res = output_buffer[i] / static_cast<float>(std::numeric_limits<short>::max());
+			p_dst_frames[i].l = res;
+			p_dst_frames[i].r = res;
+		}
+		for (int i = 0; i < p_frame_count; i++) {
+			output_buffer.remove_at(0);
+		}
+	} else {
+		// Fill with zeroes until we get data.
+		for (int i = 0; i < p_frame_count; i++) {
+			p_dst_frames[i].l = 0.0f;
+			p_dst_frames[i].r = 0.0f;
+		}
 	}
 }
 
