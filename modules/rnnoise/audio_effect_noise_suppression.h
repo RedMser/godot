@@ -31,9 +31,29 @@
 #ifndef AUDIO_EFFECT_NOISE_SUPPRESSION_H
 #define AUDIO_EFFECT_NOISE_SUPPRESSION_H
 
+#include "core/object/ref_counted.h"
 #include "core/templates/local_vector.h"
 #include "thirdparty/rnnoise/rnnoise.h"
 #include "servers/audio/audio_effect.h"
+
+class NoiseSuppression : public RefCounted {
+	friend class AudioEffectNoiseSuppressionInstance;
+	DenoiseState *rnnoise;
+	LocalVector<float> denoise_buffer;
+	LocalVector<float> output_buffer;
+	float vad_probability = 0.0f;
+
+public:
+	void denoise(const float *p_src_samples, float *p_dest_samples, int p_frame_count, int p_stride);
+
+	NoiseSuppression() {
+		rnnoise = rnnoise_create(nullptr);
+	}
+	~NoiseSuppression() {
+		rnnoise_destroy(rnnoise);
+		rnnoise = nullptr;
+	}
+};
 
 class AudioEffectNoiseSuppression;
 
@@ -42,27 +62,30 @@ class AudioEffectNoiseSuppressionInstance : public AudioEffectInstance {
 	friend class AudioEffectNoiseSuppression;
 	Ref<AudioEffectNoiseSuppression> base;
 
-	DenoiseState *rnnoise;
-	LocalVector<float> denoise_buffer;
-	LocalVector<float> output_buffer;
+	Ref<NoiseSuppression> denoisers[2];
 
 public:
 	virtual void process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) override;
 
 	AudioEffectNoiseSuppressionInstance();
-	~AudioEffectNoiseSuppressionInstance();
 };
 
 class AudioEffectNoiseSuppression : public AudioEffect {
 	GDCLASS(AudioEffectNoiseSuppression, AudioEffect);
 	friend class AudioEffectNoiseSuppressionInstance;
+
 	float vad_probability = 0.0f;
+	bool stereo = false;
 
 protected:
 	static void _bind_methods();
 
 public:
 	float get_voice_activation_probability() const;
+
+	bool is_stereo() const;
+	void set_stereo(bool p_stereo);
+
 	Ref<AudioEffectInstance> instantiate() override;
 
 	AudioEffectNoiseSuppression();

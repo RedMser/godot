@@ -28,40 +28,25 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
+#include "servers/audio_server.h"
 #include "audio_effect_noise_suppression.h"
 
 // Current version of rnnoise does not support any other frame size.
 const int DENOISE_FRAME_SIZE = 480;
 
-AudioEffectNoiseSuppressionInstance::AudioEffectNoiseSuppressionInstance() {
-	rnnoise = rnnoise_create(nullptr);
-}
-
-AudioEffectNoiseSuppressionInstance::~AudioEffectNoiseSuppressionInstance() {
-	rnnoise_destroy(rnnoise);
-	rnnoise = nullptr;
-}
-
-void AudioEffectNoiseSuppressionInstance::process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) {
-	// At the time of writing this code, RNNoise only supports a sample rate of 48000 Hz.
-	// TODO: Check "mix rate" project setting and warn accordingly.
-
-	if (p_frame_count < DENOISE_FRAME_SIZE) {
-		WARN_PRINT_ONCE(vformat("Can't use RNNoise, because AudioServer's buffer size (%d) is less than DENOISE_FRAME_SIZE (%d)", p_frame_count, DENOISE_FRAME_SIZE));
-		return;
-	}
-
+void NoiseSuppression::denoise(const float *p_src_samples, float *p_dst_samples, int p_frame_count, int p_stride) {
 	uint32_t denoise_size = denoise_buffer.size();
 	denoise_buffer.resize(denoise_size + p_frame_count);
 
 	for (int i = 0; i < p_frame_count; i++) {
-		denoise_buffer[i + denoise_size] = p_src_frames[i].l * static_cast<float>(std::numeric_limits<short>::max());
+		denoise_buffer[i + denoise_size] = p_src_samples[i * p_stride] * static_cast<float>(std::numeric_limits<short>::max());
 	}
 	while (denoise_buffer.size() >= DENOISE_FRAME_SIZE) {
 		uint32_t output_size = output_buffer.size();
 		output_buffer.resize(output_size + DENOISE_FRAME_SIZE);
-		base->vad_probability = rnnoise_process_frame(rnnoise, output_buffer.ptr() + output_size, denoise_buffer.ptr());
+		vad_probability = rnnoise_process_frame(rnnoise, output_buffer.ptr() + output_size, denoise_buffer.ptr());
 		for (int i = 0; i < DENOISE_FRAME_SIZE; i++) {
+			// TODO: PERF!
 			denoise_buffer.remove_at(0);
 		}
 	}
@@ -69,19 +54,61 @@ void AudioEffectNoiseSuppressionInstance::process(const AudioFrame *p_src_frames
 		// Sufficient data + buffer, can emit.
 		for (int i = 0; i < p_frame_count; i++) {
 			float res = output_buffer[i] / static_cast<float>(std::numeric_limits<short>::max());
-			p_dst_frames[i].l = res;
-			p_dst_frames[i].r = res;
+			p_dst_samples[i * p_stride] = res;
 		}
 		for (int i = 0; i < p_frame_count; i++) {
+			// TODO: PERF!
 			output_buffer.remove_at(0);
 		}
 	} else {
 		// Fill with zeroes until we get data.
 		for (int i = 0; i < p_frame_count; i++) {
-			p_dst_frames[i].l = 0.0f;
-			p_dst_frames[i].r = 0.0f;
+			p_dst_samples[i * p_stride] = 0.0f;
 		}
 	}
+}
+
+AudioEffectNoiseSuppressionInstance::AudioEffectNoiseSuppressionInstance() {
+	denoisers[0].instantiate();
+}
+
+void AudioEffectNoiseSuppressionInstance::process(const AudioFrame *p_src_frames, AudioFrame *p_dst_frames, int p_frame_count) {
+	// At the time of writing this code, RNNoise only supports a sample rate of 48000 Hz.
+	float sample_rate = AudioServer::get_singleton()->get_mix_rate();
+	if (!Math::is_equal_approx(sample_rate, 48000.0f)) {
+		WARN_PRINT_ONCE("Can't use RNNoise, because AudioServer's mix rate is not set to 48000 Hz. Edit in project settings.");
+		return;
+	}
+
+	if (p_frame_count < DENOISE_FRAME_SIZE) {
+		WARN_PRINT_ONCE(vformat("Can't use RNNoise, because AudioServer's buffer size (%d) is less than DENOISE_FRAME_SIZE (%d)", p_frame_count, DENOISE_FRAME_SIZE));
+		return;
+	}
+
+	if (base->is_stereo() && denoisers[1].is_null()) {
+		denoisers[1].instantiate();
+	} else if (!base->is_stereo() && denoisers[1].is_valid()) {
+		denoisers[1].unref();
+	}
+
+	for (int i = 0; i < 2; i++) {
+		if (denoisers[i].is_null()) {
+			continue;
+		}
+
+		float *samples_in = ((float *)p_src_frames) + i;
+		float *samples_out = ((float *)p_dst_frames) + i;
+		denoisers[i]->denoise(samples_in, samples_out, p_frame_count, 2);
+	}
+
+	if (!base->is_stereo()) {
+		// Saturate both channels when denoising mono data.
+		for (int i = 0; i < p_frame_count; i++) {
+			p_dst_frames[i].r = p_dst_frames[i].l;
+		}
+	}
+
+	base->vad_probability = denoisers[0]->vad_probability;
 }
 
 Ref<AudioEffectInstance> AudioEffectNoiseSuppression::instantiate() {
@@ -94,10 +121,22 @@ Ref<AudioEffectInstance> AudioEffectNoiseSuppression::instantiate() {
 
 void AudioEffectNoiseSuppression::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_voice_activation_probability"), &AudioEffectNoiseSuppression::get_voice_activation_probability);
+	ClassDB::bind_method(D_METHOD("is_stereo"), &AudioEffectNoiseSuppression::is_stereo);
+	ClassDB::bind_method(D_METHOD("set_stereo", "stereo"), &AudioEffectNoiseSuppression::set_stereo);
+
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "stereo"), "set_stereo", "is_stereo");
 }
 
 float AudioEffectNoiseSuppression::get_voice_activation_probability() const {
 	return vad_probability;
+}
+
+bool AudioEffectNoiseSuppression::is_stereo() const {
+	return stereo;
+}
+
+void AudioEffectNoiseSuppression::set_stereo(bool p_stereo) {
+	stereo = p_stereo;
 }
 
 AudioEffectNoiseSuppression::AudioEffectNoiseSuppression() {
