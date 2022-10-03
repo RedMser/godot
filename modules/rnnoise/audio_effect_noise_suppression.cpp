@@ -46,29 +46,27 @@ void AudioEffectNoiseSuppressionInstance::process(const AudioFrame *p_src_frames
 	// At the time of writing this code, RNNoise only supports a sample rate of 48000 Hz.
 	// TODO: Check "mix rate" project setting and warn accordingly.
 
-	if (p_frame_count < FRAME_SIZE) {
-		WARN_PRINT_ONCE(vformat("Can't use RNNoise, because AudioServer's buffer size (%d) is set below the minimum required FRAME_SIZE of %d", p_frame_count, FRAME_SIZE));
+	if (p_frame_count != FRAME_SIZE) {
+		WARN_PRINT_ONCE(vformat("Can't use RNNoise, because AudioServer's buffer size (%d) is not set to the required FRAME_SIZE of %d", p_frame_count, FRAME_SIZE));
 		return;
 	}
 
-	// TODO: Pack left and right channels next to each other.
-	// TODO: delay by 1 block, so we always can fill 512 samples using the 480 process_frame
 	PackedFloat32Array denoise_frames;
-	denoise_frames.resize(p_frame_count * 2);
+	denoise_frames.resize(FRAME_SIZE);
 	float *denoise_frame_ptr = denoise_frames.ptrw();
-	for (int i = 0; i < p_frame_count; i++) {
-		short quantized_l = p_src_frames[i].l * static_cast<float>(std::numeric_limits<short>::max());
-		short quantized_r = p_src_frames[i].r * static_cast<float>(std::numeric_limits<short>::max());
-		denoise_frame_ptr[i] = quantized_l;
-		denoise_frame_ptr[i + p_frame_count] = quantized_r;
+	for (int i = 0; i < FRAME_SIZE; i++) {
+		// TODO: needs two denoisestates to support stereo correctly
+		short left = p_src_frames[i].l * static_cast<float>(std::numeric_limits<short>::max());
+		denoise_frame_ptr[i] = left;
 	}
 
 	// TODO: Allow reading return value (voice activity detection probability)
 	rnnoise_process_frame(rnnoise, denoise_frame_ptr, denoise_frame_ptr);
 
-	for (int i = 0; i < p_frame_count; i++) {
-		p_dst_frames[i].l = denoise_frame_ptr[i] / static_cast<float>(std::numeric_limits<short>::max());
-		p_dst_frames[i].r = denoise_frame_ptr[i + p_frame_count] / static_cast<float>(std::numeric_limits<short>::max());
+	for (int i = 0; i < FRAME_SIZE; i++) {
+		float res = denoise_frame_ptr[i] / static_cast<float>(std::numeric_limits<short>::max());
+		p_dst_frames[i].l = res;
+		p_dst_frames[i].r = res;
 	}
 }
 
