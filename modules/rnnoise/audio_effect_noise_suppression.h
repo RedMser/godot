@@ -53,11 +53,13 @@ public:
 class AudioEffectNoiseSuppression : public AudioEffect {
 	GDCLASS(AudioEffectNoiseSuppression, AudioEffect);
 	friend class AudioEffectNoiseSuppressionInstance;
+	float vad_probability = 0.0f;
 
 protected:
 	static void _bind_methods();
 
 public:
+	float get_voice_activation_probability() const;
 	Ref<AudioEffectInstance> instantiate() override;
 
 	AudioEffectNoiseSuppression();

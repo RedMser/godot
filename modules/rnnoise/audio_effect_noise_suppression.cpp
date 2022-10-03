@@ -60,8 +60,7 @@ void AudioEffectNoiseSuppressionInstance::process(const AudioFrame *p_src_frames
 		denoise_frame_ptr[i] = left;
 	}
 
-	// TODO: Allow reading return value (voice activity detection probability)
-	rnnoise_process_frame(rnnoise, denoise_frame_ptr, denoise_frame_ptr);
+	base->vad_probability = rnnoise_process_frame(rnnoise, denoise_frame_ptr, denoise_frame_ptr);
 
 	for (int i = 0; i < FRAME_SIZE; i++) {
 		float res = denoise_frame_ptr[i] / static_cast<float>(std::numeric_limits<short>::max());
@@ -79,6 +78,11 @@ Ref<AudioEffectInstance> AudioEffectNoiseSuppression::instantiate() {
 }
 
 void AudioEffectNoiseSuppression::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_voice_activation_probability"), &AudioEffectNoiseSuppression::get_voice_activation_probability);
+}
+
+float AudioEffectNoiseSuppression::get_voice_activation_probability() const {
+	return vad_probability;
 }
 
 AudioEffectNoiseSuppression::AudioEffectNoiseSuppression() {
