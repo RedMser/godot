@@ -33,7 +33,7 @@
 
 #include "core/object/ref_counted.h"
 #include "core/templates/local_vector.h"
-#include "thirdparty/rnnoise/rnnoise.h"
+#include "thirdparty/rnnoise.h"
 #include "servers/audio/audio_effect.h"
 
 class NoiseSuppression : public RefCounted {
