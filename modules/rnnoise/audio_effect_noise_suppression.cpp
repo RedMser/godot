@@ -85,12 +85,14 @@ void AudioEffectNoiseSuppressionInstance::process(const AudioFrame *p_src_frames
 		return;
 	}
 
+	// Create or clean up denoisers based on current stereo value (one is always required for mono processing).
 	if (base->is_stereo() && denoisers[1].is_null()) {
 		denoisers[1].instantiate();
 	} else if (!base->is_stereo() && denoisers[1].is_valid()) {
 		denoisers[1].unref();
 	}
 
+	// Process each audio channel separately.
 	for (int i = 0; i < 2; i++) {
 		if (denoisers[i].is_null()) {
 			continue;
@@ -101,8 +103,8 @@ void AudioEffectNoiseSuppressionInstance::process(const AudioFrame *p_src_frames
 		denoisers[i]->denoise(samples_in, samples_out, p_frame_count, 2);
 	}
 
+	// Saturate both channels with data when only one channel is denoised.
 	if (!base->is_stereo()) {
-		// Saturate both channels when denoising mono data.
 		for (int i = 0; i < p_frame_count; i++) {
 			p_dst_frames[i].r = p_dst_frames[i].l;
 		}
