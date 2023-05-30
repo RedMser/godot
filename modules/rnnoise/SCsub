@@ -12,5 +12,5 @@ env.modules_sources += module_obj
 
 env_rnnoise.Append(CPPPATH=["thirdparty"])
 
-env.Append(LIBPATH=['../../modules/rnnoise/thirdparty/build'])
-env.Append(LIBS=['rnnoise'])
+env.Append(LIBPATH=["../../modules/rnnoise/thirdparty/build"])
+env.Append(LIBS=["rnnoise"])
