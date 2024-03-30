@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  editor_string_names.h                                                 */
+/*  editor_configuration_info.h                                           */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,32 +28,24 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_STRING_NAMES_H
-#define EDITOR_STRING_NAMES_H
+#ifndef EDITOR_CONFIGURATION_INFO_H
+#define EDITOR_CONFIGURATION_INFO_H
 
-#include "core/string/string_name.h"
+#include "core/object/configuration_info.h"
+#include "core/object/ref_counted.h"
+#include "core/string/ustring.h"
 
-class EditorStringNames {
-	static EditorStringNames *singleton;
-
-	EditorStringNames();
-
+class EditorConfigurationInfo {
 public:
-	static void create() { singleton = memnew(EditorStringNames); }
-	static void free() {
-		memdelete(singleton);
-		singleton = nullptr;
-	}
+	EditorConfigurationInfo() {}
 
-	_FORCE_INLINE_ static EditorStringNames *get_singleton() { return singleton; }
+	static Vector<ConfigurationInfo> get_configuration_info(Object *p_object);
+	static ConfigurationInfo::Severity get_max_severity(const Vector<ConfigurationInfo> &p_config_infos);
+	static StringName get_severity_icon(ConfigurationInfo::Severity p_severity);
 
-	StringName configuration_info_changed;
-	StringName Editor;
-	StringName EditorFonts;
-	StringName EditorIcons;
-	StringName EditorStyles;
+	static Vector<ConfigurationInfo> filter_list_for_property(const Vector<ConfigurationInfo> &p_config_infos, const StringName &p_property_name);
+	static String format_as_string(const ConfigurationInfo &p_config_info, bool p_wrap_lines, bool p_prefix_property_name);
+	static String format_list_as_string(const Vector<ConfigurationInfo> &p_config_infos, bool p_wrap_lines, bool p_prefix_property_name);
 };
 
-#define EditorStringName(m_name) EditorStringNames::get_singleton()->m_name
-
-#endif // EDITOR_STRING_NAMES_H
+#endif // EDITOR_CONFIGURATION_INFO_H

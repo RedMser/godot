@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  editor_string_names.h                                                 */
+/*  configuration_info_editor_plugin.h                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,32 +28,61 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_STRING_NAMES_H
-#define EDITOR_STRING_NAMES_H
+#ifndef CONFIGURATION_INFO_EDITOR_PLUGIN_H
+#define CONFIGURATION_INFO_EDITOR_PLUGIN_H
 
-#include "core/string/string_name.h"
+#include "editor/plugins/editor_plugin.h"
 
-class EditorStringNames {
-	static EditorStringNames *singleton;
+#include "editor/editor_inspector.h"
+#include "editor/plugins/editor_plugin.h"
+#include "scene/gui/margin_container.h"
 
-	EditorStringNames();
+class GridContainer;
+class Label;
+class PanelContainer;
+class RichTextLabel;
+class TextureRect;
+
+// Inspector controls.
+class ConfigurationInfoList : public MarginContainer {
+	GDCLASS(ConfigurationInfoList, MarginContainer);
+
+	Object *object = nullptr;
+
+	PanelContainer *bg_panel = nullptr;
+	GridContainer *grid = nullptr;
+	TextureRect *expand_icon = nullptr;
+	Label *title_label = nullptr;
+	RichTextLabel *config_info_text = nullptr;
+	Control *list_filler_right = nullptr;
+
+	void _update_content();
+	void _update_toggler();
+	virtual void gui_input(const Ref<InputEvent> &p_event) override;
+
+protected:
+	void _notification(int p_notification);
 
 public:
-	static void create() { singleton = memnew(EditorStringNames); }
-	static void free() {
-		memdelete(singleton);
-		singleton = nullptr;
-	}
+	void set_object(Object *p_object);
 
-	_FORCE_INLINE_ static EditorStringNames *get_singleton() { return singleton; }
-
-	StringName configuration_info_changed;
-	StringName Editor;
-	StringName EditorFonts;
-	StringName EditorIcons;
-	StringName EditorStyles;
+	ConfigurationInfoList();
 };
 
-#define EditorStringName(m_name) EditorStringNames::get_singleton()->m_name
+class EditorInspectorPluginConfigurationInfo : public EditorInspectorPlugin {
+	GDCLASS(EditorInspectorPluginConfigurationInfo, EditorInspectorPlugin);
 
-#endif // EDITOR_STRING_NAMES_H
+public:
+	virtual bool can_handle(Object *p_object) override;
+	virtual void parse_begin(Object *p_object) override;
+};
+
+// Editor plugin.
+class ConfigurationInfoEditorPlugin : public EditorPlugin {
+	GDCLASS(ConfigurationInfoEditorPlugin, EditorPlugin);
+
+public:
+	ConfigurationInfoEditorPlugin();
+};
+
+#endif // CONFIGURATION_INFO_EDITOR_PLUGIN_H
