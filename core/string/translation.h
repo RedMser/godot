@@ -55,7 +55,7 @@ protected:
 	static void _bind_compatibility_methods();
 #endif
 
-	GDVIRTUAL2RC(StringName, _get_message, StringName, StringName);
+	GDVIRTUAL3RC(StringName, _get_message, StringName, Dictionary, StringName);
 	GDVIRTUAL4RC(StringName, _get_plural_message, StringName, StringName, int, StringName);
 
 public:
@@ -64,7 +64,7 @@ public:
 
 	virtual void add_message(const StringName &p_src_text, const StringName &p_xlated_text, const StringName &p_context = "");
 	virtual void add_plural_message(const StringName &p_src_text, const Vector<String> &p_plural_xlated_texts, const StringName &p_context = "");
-	virtual StringName get_message(const StringName &p_src_text, const StringName &p_context = "") const; //overridable for other implementations
+	virtual StringName get_message(const StringName &p_src_text, const Dictionary &p_args = Dictionary(), const StringName &p_context = "") const; //overridable for other implementations
 	virtual StringName get_plural_message(const StringName &p_src_text, const StringName &p_plural_text, int p_n, const StringName &p_context = "") const;
 	virtual void erase_message(const StringName &p_src_text, const StringName &p_context = "");
 	virtual void get_message_list(List<StringName> *r_messages) const;
@@ -112,7 +112,7 @@ class TranslationServer : public Object {
 	bool _load_translations(const String &p_from);
 	String _standardize_locale(const String &p_locale, bool p_add_defaults) const;
 
-	StringName _get_message_from_translations(const StringName &p_message, const StringName &p_context, const String &p_locale, bool plural, const String &p_message_plural = "", int p_n = 0) const;
+	StringName _get_message_from_translations(const StringName &p_message, const Dictionary &p_args, const StringName &p_context, const String &p_locale, bool plural, const String &p_message_plural = "", int p_n = 0) const;
 
 	static void _bind_methods();
 
@@ -163,7 +163,7 @@ public:
 	void add_translation(const Ref<Translation> &p_translation);
 	void remove_translation(const Ref<Translation> &p_translation);
 
-	StringName translate(const StringName &p_message, const StringName &p_context = "") const;
+	StringName translate(const StringName &p_message, const Dictionary &p_args = Dictionary(), const StringName &p_context = "") const;
 	StringName translate_plural(const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context = "") const;
 
 	StringName pseudolocalize(const StringName &p_message) const;
@@ -180,15 +180,15 @@ public:
 	String get_tool_locale();
 	void set_tool_translation(const Ref<Translation> &p_translation);
 	Ref<Translation> get_tool_translation() const;
-	StringName tool_translate(const StringName &p_message, const StringName &p_context = "") const;
+	StringName tool_translate(const StringName &p_message, const Dictionary &p_args = Dictionary(), const StringName &p_context = "") const;
 	StringName tool_translate_plural(const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context = "") const;
 	void set_property_translation(const Ref<Translation> &p_translation);
-	StringName property_translate(const StringName &p_message, const StringName &p_context = "") const;
+	StringName property_translate(const StringName &p_message, const Dictionary &p_args = Dictionary(), const StringName &p_context = "") const;
 	void set_doc_translation(const Ref<Translation> &p_translation);
-	StringName doc_translate(const StringName &p_message, const StringName &p_context = "") const;
+	StringName doc_translate(const StringName &p_message, const Dictionary &p_args = Dictionary(), const StringName &p_context = "") const;
 	StringName doc_translate_plural(const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context = "") const;
 	void set_extractable_translation(const Ref<Translation> &p_translation);
-	StringName extractable_translate(const StringName &p_message, const StringName &p_context = "") const;
+	StringName extractable_translate(const StringName &p_message, const Dictionary &p_args = Dictionary(), const StringName &p_context = "") const;
 	StringName extractable_translate_plural(const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context = "") const;
 
 	void setup();

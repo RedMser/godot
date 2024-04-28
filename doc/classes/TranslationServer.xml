@@ -144,9 +144,10 @@
 		<method name="translate" qualifiers="const">
 			<return type="StringName" />
 			<param index="0" name="message" type="StringName" />
-			<param index="1" name="context" type="StringName" default="&amp;&quot;&quot;" />
+			<param index="1" name="args" type="Dictionary" default="{}" />
+			<param index="2" name="context" type="StringName" default="&amp;&quot;&quot;" />
 			<description>
-				Returns the current locale's translation for the given message (key) and context.
+				Returns the current locale's translation for the given message (key), args and context.
 			</description>
 		</method>
 		<method name="translate_plural" qualifiers="const">

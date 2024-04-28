@@ -962,7 +962,7 @@ public:
 	Variant::Type get_static_property_type_indexed(const Vector<StringName> &p_path, bool *r_valid = nullptr) const;
 
 	// Translate message (internationalization).
-	String tr(const StringName &p_message, const StringName &p_context = "") const;
+	String tr(const StringName &p_message, const Dictionary &p_args = Dictionary(), const StringName &p_context = "") const;
 	String tr_n(const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context = "") const;
 
 	bool _is_queued_for_deletion = false; // Set to true by SceneTree::queue_delete().

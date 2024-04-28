@@ -1548,21 +1548,21 @@ void Object::initialize_class() {
 	initialized = true;
 }
 
-String Object::tr(const StringName &p_message, const StringName &p_context) const {
+String Object::tr(const StringName &p_message, const Dictionary &p_args, const StringName &p_context) const {
 	if (!_can_translate || !TranslationServer::get_singleton()) {
 		return p_message;
 	}
 
 	if (Engine::get_singleton()->is_editor_hint() || Engine::get_singleton()->is_project_manager_hint()) {
-		String tr_msg = TranslationServer::get_singleton()->extractable_translate(p_message, p_context);
+		String tr_msg = TranslationServer::get_singleton()->extractable_translate(p_message, p_args, p_context);
 		if (!tr_msg.is_empty() && tr_msg != p_message) {
 			return tr_msg;
 		}
 
-		return TranslationServer::get_singleton()->tool_translate(p_message, p_context);
+		return TranslationServer::get_singleton()->tool_translate(p_message, p_args, p_context);
 	}
 
-	return TranslationServer::get_singleton()->translate(p_message, p_context);
+	return TranslationServer::get_singleton()->translate(p_message, p_args, p_context);
 }
 
 String Object::tr_n(const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context) const {
@@ -1733,7 +1733,7 @@ void Object::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_message_translation", "enable"), &Object::set_message_translation);
 	ClassDB::bind_method(D_METHOD("can_translate_messages"), &Object::can_translate_messages);
-	ClassDB::bind_method(D_METHOD("tr", "message", "context"), &Object::tr, DEFVAL(StringName()));
+	ClassDB::bind_method(D_METHOD("tr", "message", "args", "context"), &Object::tr, DEFVAL(Dictionary()), DEFVAL(StringName()));
 	ClassDB::bind_method(D_METHOD("tr_n", "message", "plural_message", "n", "context"), &Object::tr_n, DEFVAL(StringName()));
 
 	ClassDB::bind_method(D_METHOD("is_queued_for_deletion"), &Object::is_queued_for_deletion);

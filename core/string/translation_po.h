@@ -75,7 +75,7 @@ public:
 	int get_message_count() const override;
 	void add_message(const StringName &p_src_text, const StringName &p_xlated_text, const StringName &p_context = "") override;
 	void add_plural_message(const StringName &p_src_text, const Vector<String> &p_plural_xlated_texts, const StringName &p_context = "") override;
-	StringName get_message(const StringName &p_src_text, const StringName &p_context = "") const override;
+	StringName get_message(const StringName &p_src_text, const Dictionary &p_args = Dictionary(), const StringName &p_context = "") const override;
 	StringName get_plural_message(const StringName &p_src_text, const StringName &p_plural_text, int p_n, const StringName &p_context = "") const override;
 	void erase_message(const StringName &p_src_text, const StringName &p_context = "") override;
 

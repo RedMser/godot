@@ -5376,7 +5376,7 @@ Vector<uint8_t> String::to_wchar_buffer() const {
  */
 String TTR(const String &p_text, const String &p_context) {
 	if (TranslationServer::get_singleton()) {
-		return TranslationServer::get_singleton()->tool_translate(p_text, p_context);
+		return TranslationServer::get_singleton()->tool_translate(p_text, Dictionary(), p_context);
 	}
 
 	return p_text;
@@ -5417,7 +5417,7 @@ String DTR(const String &p_text, const String &p_context) {
 	const String text = p_text.dedent().strip_edges();
 
 	if (TranslationServer::get_singleton()) {
-		return String(TranslationServer::get_singleton()->doc_translate(text, p_context)).replace("$DOCS_URL", VERSION_DOCS_URL);
+		return String(TranslationServer::get_singleton()->doc_translate(text, Dictionary(), p_context)).replace("$DOCS_URL", VERSION_DOCS_URL);
 	}
 
 	return text.replace("$DOCS_URL", VERSION_DOCS_URL);
@@ -5458,9 +5458,9 @@ String DTRN(const String &p_text, const String &p_text_plural, int p_n, const St
  */
 String RTR(const String &p_text, const String &p_context) {
 	if (TranslationServer::get_singleton()) {
-		String rtr = TranslationServer::get_singleton()->tool_translate(p_text, p_context);
+		String rtr = TranslationServer::get_singleton()->tool_translate(p_text, Dictionary(), p_context);
 		if (rtr.is_empty() || rtr == p_text) {
-			return TranslationServer::get_singleton()->translate(p_text, p_context);
+			return TranslationServer::get_singleton()->translate(p_text, Dictionary(), p_context);
 		}
 		return rtr;
 	}

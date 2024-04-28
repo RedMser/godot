@@ -709,7 +709,7 @@ public:
 	AutoTranslateMode get_auto_translate_mode() const;
 	bool can_auto_translate() const;
 
-	_FORCE_INLINE_ String atr(const String p_message, const StringName p_context = "") const { return can_auto_translate() ? tr(p_message, p_context) : p_message; }
+	_FORCE_INLINE_ String atr(const String p_message, const Dictionary &p_args = Dictionary(), const StringName p_context = "") const { return can_auto_translate() ? tr(p_message, p_args, p_context) : p_message; }
 	_FORCE_INLINE_ String atr_n(const String p_message, const StringName &p_message_plural, int p_n, const StringName p_context = "") const { return can_auto_translate() ? tr_n(p_message, p_message_plural, p_n, p_context) : p_message; }
 
 	/* THREADING */

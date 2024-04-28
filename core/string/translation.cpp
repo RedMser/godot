@@ -107,14 +107,17 @@ void Translation::add_plural_message(const StringName &p_src_text, const Vector<
 	translation_map[p_src_text] = p_plural_xlated_texts[0];
 }
 
-StringName Translation::get_message(const StringName &p_src_text, const StringName &p_context) const {
+StringName Translation::get_message(const StringName &p_src_text, const Dictionary &p_args, const StringName &p_context) const {
 	StringName ret;
-	if (GDVIRTUAL_CALL(_get_message, p_src_text, p_context, ret)) {
+	if (GDVIRTUAL_CALL(_get_message, p_src_text, p_args, p_context, ret)) {
 		return ret;
 	}
 
 	if (p_context != StringName()) {
 		WARN_PRINT("Translation class doesn't handle context. Using context in get_message() on a Translation instance is probably a mistake. \nUse a derived Translation class that handles context, such as TranslationPO class");
+	}
+	if (!p_args.is_empty()) {
+		WARN_PRINT("Translation class doesn't handle args. Using args in get_message() on a Translation instance is probably a mistake. \nUse a derived Translation class that handles context, such as TranslationFluent class");
 	}
 
 	HashMap<StringName, StringName>::ConstIterator E = translation_map.find(p_src_text);
@@ -158,7 +161,7 @@ void Translation::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_locale"), &Translation::get_locale);
 	ClassDB::bind_method(D_METHOD("add_message", "src_message", "xlated_message", "context"), &Translation::add_message, DEFVAL(StringName()));
 	ClassDB::bind_method(D_METHOD("add_plural_message", "src_message", "xlated_messages", "context"), &Translation::add_plural_message, DEFVAL(StringName()));
-	ClassDB::bind_method(D_METHOD("get_message", "src_message", "context"), &Translation::get_message, DEFVAL(StringName()));
+	ClassDB::bind_method(D_METHOD("get_message", "src_message", "args", "context"), &Translation::get_message, DEFVAL(Dictionary()), DEFVAL(StringName()));
 	ClassDB::bind_method(D_METHOD("get_plural_message", "src_message", "src_plural_message", "n", "context"), &Translation::get_plural_message, DEFVAL(StringName()));
 	ClassDB::bind_method(D_METHOD("erase_message", "src_message", "context"), &Translation::erase_message, DEFVAL(StringName()));
 	ClassDB::bind_method(D_METHOD("get_message_list"), &Translation::_get_message_list);
@@ -168,7 +171,7 @@ void Translation::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_get_messages"), &Translation::_get_messages);
 
 	GDVIRTUAL_BIND(_get_plural_message, "src_message", "src_plural_message", "n", "context");
-	GDVIRTUAL_BIND(_get_message, "src_message", "context");
+	GDVIRTUAL_BIND(_get_message, "src_message", "args", "context");
 
 	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "messages", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_messages", "_get_messages");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "locale"), "set_locale", "get_locale");
@@ -582,17 +585,17 @@ void TranslationServer::clear() {
 	translations.clear();
 }
 
-StringName TranslationServer::translate(const StringName &p_message, const StringName &p_context) const {
+StringName TranslationServer::translate(const StringName &p_message, const Dictionary &p_args, const StringName &p_context) const {
 	// Match given message against the translation catalog for the project locale.
 
 	if (!enabled) {
 		return p_message;
 	}
 
-	StringName res = _get_message_from_translations(p_message, p_context, locale, false);
+	StringName res = _get_message_from_translations(p_message, p_args, p_context, locale, false);
 
 	if (!res && fallback.length() >= 2) {
-		res = _get_message_from_translations(p_message, p_context, fallback, false);
+		res = _get_message_from_translations(p_message, p_args, p_context, fallback, false);
 	}
 
 	if (!res) {
@@ -610,10 +613,10 @@ StringName TranslationServer::translate_plural(const StringName &p_message, cons
 		return p_message_plural;
 	}
 
-	StringName res = _get_message_from_translations(p_message, p_context, locale, true, p_message_plural, p_n);
+	StringName res = _get_message_from_translations(p_message, Dictionary(), p_context, locale, true, p_message_plural, p_n);
 
 	if (!res && fallback.length() >= 2) {
-		res = _get_message_from_translations(p_message, p_context, fallback, true, p_message_plural, p_n);
+		res = _get_message_from_translations(p_message, Dictionary(), p_context, fallback, true, p_message_plural, p_n);
 	}
 
 	if (!res) {
@@ -626,7 +629,7 @@ StringName TranslationServer::translate_plural(const StringName &p_message, cons
 	return res;
 }
 
-StringName TranslationServer::_get_message_from_translations(const StringName &p_message, const StringName &p_context, const String &p_locale, bool plural, const String &p_message_plural, int p_n) const {
+StringName TranslationServer::_get_message_from_translations(const StringName &p_message, const Dictionary &p_args, const StringName &p_context, const String &p_locale, bool plural, const String &p_message_plural, int p_n) const {
 	StringName res;
 	int best_score = 0;
 
@@ -639,7 +642,7 @@ StringName TranslationServer::_get_message_from_translations(const StringName &p
 		if (score > 0 && score >= best_score) {
 			StringName r;
 			if (!plural) {
-				r = t->get_message(p_message, p_context);
+				r = t->get_message(p_message, p_args, p_context);
 			} else {
 				r = t->get_plural_message(p_message, p_message_plural, p_n, p_context);
 			}
@@ -748,9 +751,9 @@ String TranslationServer::get_tool_locale() {
 	}
 }
 
-StringName TranslationServer::tool_translate(const StringName &p_message, const StringName &p_context) const {
+StringName TranslationServer::tool_translate(const StringName &p_message, const Dictionary &p_args, const StringName &p_context) const {
 	if (tool_translation.is_valid()) {
-		StringName r = tool_translation->get_message(p_message, p_context);
+		StringName r = tool_translation->get_message(p_message, p_args, p_context);
 		if (r) {
 			return editor_pseudolocalization ? tool_pseudolocalize(r) : r;
 		}
@@ -776,9 +779,9 @@ void TranslationServer::set_property_translation(const Ref<Translation> &p_trans
 	property_translation = p_translation;
 }
 
-StringName TranslationServer::property_translate(const StringName &p_message, const StringName &p_context) const {
+StringName TranslationServer::property_translate(const StringName &p_message, const Dictionary &p_args, const StringName &p_context) const {
 	if (property_translation.is_valid()) {
-		StringName r = property_translation->get_message(p_message, p_context);
+		StringName r = property_translation->get_message(p_message, p_args, p_context);
 		if (r) {
 			return r;
 		}
@@ -790,9 +793,9 @@ void TranslationServer::set_doc_translation(const Ref<Translation> &p_translatio
 	doc_translation = p_translation;
 }
 
-StringName TranslationServer::doc_translate(const StringName &p_message, const StringName &p_context) const {
+StringName TranslationServer::doc_translate(const StringName &p_message, const Dictionary &p_args, const StringName &p_context) const {
 	if (doc_translation.is_valid()) {
-		StringName r = doc_translation->get_message(p_message, p_context);
+		StringName r = doc_translation->get_message(p_message, p_args, p_context);
 		if (r) {
 			return r;
 		}
@@ -818,9 +821,9 @@ void TranslationServer::set_extractable_translation(const Ref<Translation> &p_tr
 	extractable_translation = p_translation;
 }
 
-StringName TranslationServer::extractable_translate(const StringName &p_message, const StringName &p_context) const {
+StringName TranslationServer::extractable_translate(const StringName &p_message, const Dictionary &p_args, const StringName &p_context) const {
 	if (extractable_translation.is_valid()) {
-		StringName r = extractable_translation->get_message(p_message, p_context);
+		StringName r = extractable_translation->get_message(p_message, p_args, p_context);
 		if (r) {
 			return r;
 		}
@@ -1054,7 +1057,7 @@ void TranslationServer::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_locale_name", "locale"), &TranslationServer::get_locale_name);
 
-	ClassDB::bind_method(D_METHOD("translate", "message", "context"), &TranslationServer::translate, DEFVAL(StringName()));
+	ClassDB::bind_method(D_METHOD("translate", "message", "args", "context"), &TranslationServer::translate, DEFVAL(Dictionary()), DEFVAL(StringName()));
 	ClassDB::bind_method(D_METHOD("translate_plural", "message", "plural_message", "n", "context"), &TranslationServer::translate_plural, DEFVAL(StringName()));
 
 	ClassDB::bind_method(D_METHOD("add_translation", "translation"), &TranslationServer::add_translation);

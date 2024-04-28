@@ -3627,7 +3627,7 @@ void Node::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_unique_name_in_owner", "enable"), &Node::set_unique_name_in_owner);
 	ClassDB::bind_method(D_METHOD("is_unique_name_in_owner"), &Node::is_unique_name_in_owner);
 
-	ClassDB::bind_method(D_METHOD("atr", "message", "context"), &Node::atr, DEFVAL(""));
+	ClassDB::bind_method(D_METHOD("atr", "message", "args", "context"), &Node::atr, DEFVAL(Dictionary()), DEFVAL(""));
 	ClassDB::bind_method(D_METHOD("atr_n", "message", "plural_message", "n", "context"), &Node::atr_n, DEFVAL(""));
 
 #ifdef TOOLS_ENABLED

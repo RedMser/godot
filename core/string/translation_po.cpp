@@ -232,9 +232,12 @@ String TranslationPO::get_plural_rule() const {
 	return plural_rule;
 }
 
-StringName TranslationPO::get_message(const StringName &p_src_text, const StringName &p_context) const {
+StringName TranslationPO::get_message(const StringName &p_src_text, const Dictionary &p_args, const StringName &p_context) const {
 	if (!translation_map.has(p_context) || !translation_map[p_context].has(p_src_text)) {
 		return StringName();
+	}
+	if (!p_args.is_empty()) {
+		WARN_PRINT("TranslationPO class doesn't handle args. Using args in get_message() on a TranslationPO instance is probably a mistake. \nUse a derived Translation class that handles context, such as TranslationFluent class");
 	}
 	ERR_FAIL_COND_V_MSG(translation_map[p_context][p_src_text].is_empty(), StringName(), "Source text \"" + String(p_src_text) + "\" is registered but doesn't have a translation. Please report this bug.");
 
