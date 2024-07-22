@@ -210,7 +210,7 @@ bool OptimizedTranslation::_get(const StringName &p_name, Variant &r_ret) const 
 	return true;
 }
 
-StringName OptimizedTranslation::get_message(const StringName &p_src_text, const StringName &p_context) const {
+StringName OptimizedTranslation::get_message(const StringName &p_src_text, const Dictionary &p_args, const StringName &p_context) const {
 	// p_context passed in is ignore. The use of context is not yet supported in OptimizedTranslation.
 
 	int htsize = hash_table.size();
@@ -302,7 +302,7 @@ Vector<String> OptimizedTranslation::get_translated_message_list() const {
 
 StringName OptimizedTranslation::get_plural_message(const StringName &p_src_text, const StringName &p_plural_text, int p_n, const StringName &p_context) const {
 	// The use of plurals translation is not yet supported in OptimizedTranslation.
-	return get_message(p_src_text, p_context);
+	return get_message(p_src_text, Dictionary(), p_context);
 }
 
 void OptimizedTranslation::_get_property_list(List<PropertyInfo> *p_list) const {

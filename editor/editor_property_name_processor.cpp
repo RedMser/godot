@@ -124,7 +124,7 @@ String EditorPropertyNameProcessor::process_name(const String &p_name, Style p_s
 		case STYLE_LOCALIZED: {
 			const String capitalized = _capitalize_name(p_name);
 			if (TranslationServer::get_singleton()) {
-				return TranslationServer::get_singleton()->property_translate(capitalized, _get_context(p_name, p_property, p_class));
+				return TranslationServer::get_singleton()->property_translate(capitalized, Dictionary(), _get_context(p_name, p_property, p_class));
 			}
 			return capitalized;
 		} break;
