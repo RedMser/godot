@@ -118,7 +118,7 @@ void EditorFileDialog::_native_dialog_cb(bool p_ok, const Vector<String> &p_file
 
 	String f = files[0];
 
-	file->set_text(f);
+	file->set_text(f.get_file());
 	dir->set_text(f.get_base_dir());
 	filter->select(p_filter);
 	_dir_submitted(f.get_base_dir());
@@ -1238,7 +1238,7 @@ Vector<String> EditorFileDialog::get_filters() const {
 }
 
 String EditorFileDialog::get_current_dir() const {
-	return dir_access->get_current_dir();
+	return full_dir;
 }
 
 String EditorFileDialog::get_current_file() const {
@@ -1246,7 +1246,7 @@ String EditorFileDialog::get_current_file() const {
 }
 
 String EditorFileDialog::get_current_path() const {
-	return dir_access->get_current_dir().path_join(file->get_text());
+	return full_dir.path_join(file->get_text());
 }
 
 void EditorFileDialog::set_current_dir(const String &p_dir) {

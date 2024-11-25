@@ -146,7 +146,7 @@ void FileDialog::_native_dialog_cb_with_options(bool p_ok, const Vector<String> 
 
 	String f = files[0];
 
-	file->set_text(f);
+	file->set_text(f.get_file());
 	dir->set_text(f.get_base_dir());
 	filter->select(p_filter);
 	_change_dir(f.get_base_dir());
@@ -982,7 +982,7 @@ String FileDialog::get_filename_filter() const {
 }
 
 String FileDialog::get_current_dir() const {
-	return dir->get_text();
+	return full_dir;
 }
 
 String FileDialog::get_current_file() const {
@@ -990,7 +990,7 @@ String FileDialog::get_current_file() const {
 }
 
 String FileDialog::get_current_path() const {
-	return dir->get_text().path_join(file->get_text());
+	return full_dir.path_join(file->get_text());
 }
 
 void FileDialog::set_current_dir(const String &p_dir) {
